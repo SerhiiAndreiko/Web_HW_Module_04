@@ -1,18 +1,16 @@
 # Використовуємо офіційний Python Slim образ
 FROM python:3.9-slim
 
-# Робоча директорія контейнера
-WORKDIR /app
+ENV APP_HOME /app
+
+WORKDIR $APP_HOME
 
 # Копіюємо файли проекту в контейнер
-COPY . /app
+COPY Web_HW_Module_4/ .
 
-# Встановлюємо залежності
-RUN pip install --no-cache-dir -r requirements.txt
 
-# Відкриваємо потрібні порти
 EXPOSE 3000
 EXPOSE 5000
 
-# Запускаємо додаток та сервер
-CMD ["python", "app.py"]
+
+CMD ["python", "main.py"]

@@ -6,6 +6,7 @@ import json
 import logging
 from datetime import datetime
 import socket
+from socket import socket
 
 
 class SocketClient():
@@ -16,7 +17,7 @@ class SocketClient():
     def run_socket_client(self, message: str) -> bool:
         result = False
         try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock: socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             server = (self.UDP_IP, self.UDP_PORT)
             if message:
                 data = message.encode()
