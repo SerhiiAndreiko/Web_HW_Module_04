@@ -6,7 +6,6 @@ import json
 import logging
 from datetime import datetime
 import socket
-from socket import socket
 
 
 class SocketClient():
@@ -14,6 +13,7 @@ class SocketClient():
         self.UDP_IP = ip
         self.UDP_PORT = port
 
+    # noinspection PyArgumentList
     def run_socket_client(self, message: str) -> bool:
         result = False
         try:
@@ -24,7 +24,7 @@ class SocketClient():
                 sock.sendto(data, server)
                 response, address = sock.recvfrom(1024)
                 status = json.loads(response)
-                if status.get("STATUS") == 200:
+                if status.get("STATUS") == "OK":
                     logger.info('SAVED OK')
                     result = True
                 else:
@@ -32,7 +32,7 @@ class SocketClient():
         except Exception as e:
             logger.error(e)
         finally:
-            sock.close()
+            socket.close()
         return result
 
 

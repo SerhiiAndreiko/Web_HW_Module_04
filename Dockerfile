@@ -5,12 +5,11 @@ ENV APP_HOME /app
 
 WORKDIR $APP_HOME
 
-# Копіюємо файли проекту в контейнер
-COPY Web_HW_Module_4/ .
+COPY Web_HW_Module_04/ .
 
 
 EXPOSE 3000
 EXPOSE 5000
 
 
-CMD ["python", "main.py"]
+ENTRYPOINT ["python", "main.py"]
