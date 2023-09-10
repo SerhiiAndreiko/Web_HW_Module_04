@@ -9,7 +9,7 @@ import socket
 
 
 class SocketClient():
-    def __init__(self, ip='127.0.0.1', port=3000) -> None:
+    def __init__(self, ip='127.0.0.1', port=3001) -> None:
         self.UDP_IP = ip
         self.UDP_PORT = port
 
@@ -68,54 +68,58 @@ class WWWHandler(BaseHTTPRequestHandler):
             logger.error(e)
 
     def do_POST(self):
-        try:
-            route_path = urllib.parse.urlparse(self.path)
-            if route_path.path == "/message":
-                cont_len = int(self.headers["Content-Length"])
-                data = self.rfile.read(cont_len).decode()
-                data_parse = {
-                    key: urllib.parse.unquote_plus(val) for key, val in [el.split("=") for el in data.split("&")]
-                }
-                timestamp = str(datetime.now())
-                data_record = {
-                    timestamp: data_parse
-                }
-                try:
-                    json_data = json.dumps(data_record, ensure_ascii=False)
-                    result = self.save_data(data_record)
-                    location = "/message_done.html" if result else "/error.html"
-                    self.send_response(301)
-                    self.send_header("Location", location)
-                    self.end_headers()
-
-                except Exception as e:
-                    logger.error(f'Error in do_POST: {e}')
-            else:
+        route_path = urllib.parse.urlparse(self.path)
+        if route_path.path == "/message":
+            cont_len = int(self.headers["Content-Length"])
+            data = self.rfile.read(cont_len).decode()
+            data_parse = { 
+                key: urllib.parse.unquote_plus(val) for key, val in [ el.split("=") for el in data.split("&")]
+            }
+            if not data_parse or all(val == '' for val in data_parse.values()):
                 self.send_response(301)
-                self.send_header("Location", "/error.html")
+                self.send_header("Location", "/empty_message.html")
                 self.end_headers()
-        except Exception as e:
-            self.send_response(500)
+                return
+            # if not data_parse:
+            #     self.send_response(301)
+            #     self.send_header("Location", "/empty_message.html")
+            #     self.end_headers()
+            #     return
+
+            timestamp = str(datetime.now())
+            data_record = {
+                timestamp: data_parse
+            }       
+    
+            try:
+                json_data = json.dumps(data_record, ensure_ascii=False)
+                result = self.save_data(data_record)
+                location = "/message_done.html" if result else "/error.html"
+                self.send_response(301)
+                self.send_header("Location", location)
+                self.end_headers()
+
+            except Exception as e:
+                logger.error(e)
+        else:
+            self.send_response(301)
+            self.send_header("Location", "/error.html")
             self.end_headers()
-            logger.error(f'Error in do_POST: {e}')
+
 
     def do_GET(self):
-        try:
-            route_path = urllib.parse.urlparse(self.path)
-            if route_path.path == "/":
+        route_path = urllib.parse.urlparse(self.path)
+        match route_path.path:
+            case "/":
                 filename = self.BASE_ROOT_DIR / "index.html"
                 self.get_file(filename)
-            else:
+            case _:
                 filename = self.BASE_ROOT_DIR / route_path.path[1:]
                 if filename.exists():
                     self.get_file(filename)
                 else:
                     filename = self.BASE_ROOT_DIR / "error.html"
                     self.get_file(filename, 404)
-        except Exception as e:
-            self.send_response(500)
-            self.end_headers()
-            logger.error(f'Error in do_GET: {e}')
 
 
 def init_storage(storage: Path):
@@ -134,22 +138,25 @@ def init_storage(storage: Path):
                 logger.error(f'Error in init_storage: {e}')
 
 
-def run(server=HTTPServer, handler=WWWHandler, port=3000):
+def run(server=HTTPServer, handler=WWWHandler):
+    global logger
+    logger = logging.getLogger(__name__)
+    address = ("", 3000)
+    www_root = Path("www-data/")
+    storage = Path("storage/")
+    socket_client = SocketClient()
+    handler.set_root(www_root, storage, socket_client)
+    http_server = server(address, handler)
+    logger.info(f"Start HTTP server at port: {address[1]}")
     try:
-        global logger
-        logger = logging.getLogger(__name__)
-        address = ("", port)
-        www_root = Path("www-data/")
-        storage = Path("storage/")
-        socket_client = SocketClient()
-        handler.set_root(www_root, storage, socket_client)
-        http_server = server(address, handler)
-        logger.info(f"Start HTTP server at port: {address[1]}")
         http_server.serve_forever()
-    except Exception as e:
-        logger.error(f'Error in run: {e}')
     except KeyboardInterrupt:
         http_server.server_close()
+    except Exception as e:
+        logger.error(e)
+        http_server.server_close()
+
+logger: logging
 
 
 if __name__ == "__main__":
