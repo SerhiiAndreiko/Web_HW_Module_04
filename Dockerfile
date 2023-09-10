@@ -5,7 +5,7 @@ ENV APP_HOME /app
 
 WORKDIR $APP_HOME
 
-COPY Web_HW_Module_04/ .
+COPY . .
 
 
 EXPOSE 3000

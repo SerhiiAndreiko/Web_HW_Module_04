@@ -21,7 +21,7 @@ class DataStorage():
             with open(filename, "r", encoding="utf-8") as fp:
                 loaded_data: dict = json.load(fp)
         except OSError as e:
-            logger.error(e)
+            logger.error(f'Error in save_data: {e}')
             return False
       
         loaded_data.update(data)
@@ -31,7 +31,7 @@ class DataStorage():
                     json.dump(loaded_data, fp, ensure_ascii=False, indent=4)
                     result = True
             except OSError as e:
-                logger.error(e)
+                logger.error(f'Error in save_data: {e}')
         return result
 
 
@@ -39,7 +39,10 @@ class DataStorage():
         self.BASE_STORAGE_DIR = storage
         if not storage.is_dir():
             logger.debug(f"init_storage : creating need folder: {storage}")
-        storage.mkdir(parents=True, exist_ok=True)
+            try:
+                storage.mkdir(parents=True, exist_ok=True)
+            except Exception as e:
+                logger.error(f'Error in init_storage: {e}')
         data_file = storage / "data.json"
         if not data_file.is_file():
             with open(data_file, "w", encoding="utf-8") as fp:
@@ -70,7 +73,7 @@ def run_socket_server(ip, port, data_storage: DataStorage):
     except KeyboardInterrupt:
         logger.info(f'Destroy server')
     except Exception as e:
-        logger.error(e)
+        logger.error(f'Error in run_socket_server: {e}')
     finally:
         sock.close()
 
@@ -93,4 +96,3 @@ def run(ip='127.0.0.1', port=3001):
 
 if __name__ == "__main__":
     run()
-

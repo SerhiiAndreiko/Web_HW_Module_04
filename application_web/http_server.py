@@ -13,7 +13,6 @@ class SocketClient():
         self.UDP_IP = ip
         self.UDP_PORT = port
 
-    # noinspection PyArgumentList
     def run_socket_client(self, message: str) -> bool:
         result = False
         try:
@@ -22,17 +21,17 @@ class SocketClient():
             if message:
                 data = message.encode()
                 sock.sendto(data, server)
-                response, address = sock.recvfrom(1024)
-                status = json.loads(response)
+                response = sock.recvfrom(1024)
+                status = json.loads(response[0])
                 if status.get("STATUS") == "OK":
                     logger.info('SAVED OK')
                     result = True
                 else:
                     logger.error('ERROR ON SAVING')
         except Exception as e:
-            logger.error(e)
+            logger.error(f'Error in run_socket_client: {e}')
         finally:
-            socket.close()
+            sock.close()
         return result
 
 
@@ -90,7 +89,7 @@ class WWWHandler(BaseHTTPRequestHandler):
                     self.end_headers()
 
                 except Exception as e:
-                    logger.error(e)
+                    logger.error(f'Error in do_POST: {e}')
             else:
                 self.send_response(301)
                 self.send_header("Location", "/error.html")
@@ -98,7 +97,7 @@ class WWWHandler(BaseHTTPRequestHandler):
         except Exception as e:
             self.send_response(500)
             self.end_headers()
-            logger.error(e)
+            logger.error(f'Error in do_POST: {e}')
 
     def do_GET(self):
         try:
@@ -116,35 +115,40 @@ class WWWHandler(BaseHTTPRequestHandler):
         except Exception as e:
             self.send_response(500)
             self.end_headers()
-            logger.error(e)
+            logger.error(f'Error in do_GET: {e}')
 
 
 def init_storage(storage: Path):
     if not storage.is_dir():
         logger.debug(f"init_storage : creating need folder: {storage}")
-    storage.mkdir(parents=True, exist_ok=True)
+        try:
+            storage.mkdir(parents=True, exist_ok=True)
+        except Exception as e:
+            logger.error(f'Error in init_storage: {e}')
     data_file = storage / "data.json"
     if not data_file.is_file():
         with open(data_file, "w", encoding="utf-8") as fp:
-            json.dump({}, fp)
+            try:
+                json.dump({}, fp)
+            except Exception as e:
+                logger.error(f'Error in init_storage: {e}')
 
 
 def run(server=HTTPServer, handler=WWWHandler, port=3000):
-    global logger
-    logger = logging.getLogger(__name__)
-    address = ("", port)
-    www_root = Path("www-data/")
-    storage = Path("storage/")
-    socket_client = SocketClient()
-    handler.set_root(www_root, storage, socket_client)
-    http_server = server(address, handler)
-    logger.info(f"Start HTTP server at port: {address[1]}")
     try:
+        global logger
+        logger = logging.getLogger(__name__)
+        address = ("", port)
+        www_root = Path("www-data/")
+        storage = Path("storage/")
+        socket_client = SocketClient()
+        handler.set_root(www_root, storage, socket_client)
+        http_server = server(address, handler)
+        logger.info(f"Start HTTP server at port: {address[1]}")
         http_server.serve_forever()
-    except KeyboardInterrupt:
-        http_server.server_close()
     except Exception as e:
-        logger.error(e)
+        logger.error(f'Error in run: {e}')
+    except KeyboardInterrupt:
         http_server.server_close()
 
 
