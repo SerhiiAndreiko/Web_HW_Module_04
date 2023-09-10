@@ -78,7 +78,7 @@ def run_socket_server(ip, port, data_storage: DataStorage):
         sock.close()
 
 
-def run(ip='127.0.0.1', port=3001):
+def run(ip='127.0.0.1', port=5000):
     global logger
     logger = logging.getLogger(__name__)
     logging.basicConfig(

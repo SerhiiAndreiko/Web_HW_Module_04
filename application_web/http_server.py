@@ -9,7 +9,7 @@ import socket
 
 
 class SocketClient():
-    def __init__(self, ip='127.0.0.1', port=3001) -> None:
+    def __init__(self, ip='127.0.0.1', port=5000) -> None:
         self.UDP_IP = ip
         self.UDP_PORT = port
 
